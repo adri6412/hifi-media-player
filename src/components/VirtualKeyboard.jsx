@@ -1,0 +1,184 @@
+import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
+import { useKeyboard } from '../contexts/KeyboardContext';
+import SimpleKeyboard from 'simple-keyboard';
+import 'simple-keyboard/build/css/index.css';
+
+const VirtualKeyboard = () => {
+  const { isKeyboardVisible, inputValue, updateInputValue, hideKeyboard, confirmInput } = useKeyboard();
+  const keyboardRef = useRef(null);
+  const simpleKeyboardRef = useRef(null);
+
+  // Initialize SimpleKeyboard when component mounts and keyboard is visible
+  useEffect(() => {
+    console.log('🎹 VirtualKeyboard useEffect triggered!', { 
+      isKeyboardVisible, 
+      keyboardRef: keyboardRef.current, 
+      simpleKeyboardRef: simpleKeyboardRef.current 
+    });
+    
+    if (isKeyboardVisible && keyboardRef.current && !simpleKeyboardRef.current) {
+      console.log('🎹 Creating SimpleKeyboard instance...');
+      simpleKeyboardRef.current = new SimpleKeyboard(keyboardRef.current, {
+        layout: {
+          default: [
+            '1 2 3 4 5 6 7 8 9 0',
+            'q w e r t y u i o p',
+            'a s d f g h j k l',
+            'z x c v b n m . -',
+            '{space} {bksp}'
+          ]
+        },
+        display: {
+          '{space}': 'SPACE',
+          '{bksp}': '⌫'
+        },
+        theme: 'hg-theme-default',
+        physicalKeyboardHighlight: false,
+        syncInstanceInputs: true,
+        mergeDisplay: true,
+        debug: false,
+        buttonTheme: [
+          {
+            class: "hg-button-custom",
+            buttons: "1 2 3 4 5 6 7 8 9 0 q w e r t y u i o p a s d f g h j k l z x c v b n m . - {space} {bksp}"
+          }
+        ]
+      });
+
+      // Handle key press
+      simpleKeyboardRef.current.onKeyPress = (button) => {
+        console.log('🎹 Key pressed on virtual keyboard:', button);
+        if (button === '{space}') {
+          updateInputValue(inputValue + ' ');
+        } else if (button === '{bksp}') {
+          updateInputValue(inputValue.slice(0, -1));
+        } else {
+          updateInputValue(inputValue + button);
+        }
+      };
+      console.log('🎹 SimpleKeyboard created successfully!');
+    }
+
+    // Cleanup when keyboard is hidden
+    if (!isKeyboardVisible && simpleKeyboardRef.current) {
+      simpleKeyboardRef.current.destroy();
+      simpleKeyboardRef.current = null;
+    }
+
+    return () => {
+      if (simpleKeyboardRef.current) {
+        simpleKeyboardRef.current.destroy();
+        simpleKeyboardRef.current = null;
+      }
+    };
+  }, [isKeyboardVisible, inputValue, updateInputValue]);
+
+  // Update keyboard input when inputValue changes
+  useEffect(() => {
+    if (simpleKeyboardRef.current) {
+      simpleKeyboardRef.current.setInput(inputValue);
+    }
+  }, [inputValue]);
+
+  // Close keyboard when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (keyboardRef.current && !keyboardRef.current.contains(event.target)) {
+        hideKeyboard();
+      }
+    };
+
+    if (isKeyboardVisible) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isKeyboardVisible, hideKeyboard]);
+
+  console.log('🎹 VirtualKeyboard render:', { isKeyboardVisible, inputValue });
+  
+  return (
+    <AnimatePresence>
+      {isKeyboardVisible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 flex items-end justify-center z-50"
+          style={{ 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)'
+          }}
+        >
+          <motion.div
+            ref={keyboardRef}
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            className="bg-hifi-dark border-t border-hifi-accent rounded-t-2xl p-6 w-full max-w-4xl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">Tastiera Virtuale</h3>
+              <div className="flex items-center space-x-2">
+                <div className="text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded">
+                  DEBUG: Visibile
+                </div>
+                <motion.button
+                  onClick={hideKeyboard}
+                  className="p-2 rounded-lg bg-hifi-light hover:bg-hifi-accent text-white transition-colors"
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <X size={20} />
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Current value display */}
+            <div className="mb-6 p-4 bg-hifi-light rounded-lg">
+              <div className="text-hifi-silver text-sm mb-1">Valore corrente:</div>
+              <div className="text-white font-mono text-lg break-all">
+                {inputValue || 'Nessun testo inserito'}
+              </div>
+            </div>
+
+            {/* Keyboard */}
+            <div className="simple-keyboard-container">
+              <div ref={keyboardRef} className="simple-keyboard"></div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3 mt-6">
+              <motion.button
+                onClick={() => updateInputValue('')}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold transition-colors"
+                whileTap={{ scale: 0.95 }}
+              >
+                Cancella Tutto
+              </motion.button>
+              <motion.button
+                onClick={confirmInput}
+                className="flex-1 bg-hifi-gold hover:bg-yellow-600 text-black py-3 rounded-lg font-semibold transition-colors"
+                whileTap={{ scale: 0.95 }}
+              >
+                Conferma
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+export default VirtualKeyboard;

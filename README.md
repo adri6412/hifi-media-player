@@ -1,0 +1,468 @@
+# HiFi Media Player
+
+A professional touchscreen-friendly hi-fi media player built with Electron, React, and Tailwind CSS. Designed for DietPi x86 systems with 7-10" touchscreen displays.
+
+![HiFi Media Player](https://img.shields.io/badge/platform-Electron-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+## ✨ Features
+
+- **Modern Hi-Fi Aesthetic**: Dark metallic theme with golden accents
+- **Touch-Optimized UI**: Large buttons and intuitive gestures for 1024x600 displays
+- **Embedded Web Interfaces**:
+  - **Lyrion Server**: Full Material skin interface for local music library
+  - **YouTube**: Embedded YouTube web player
+  - **Spotify**: Embedded Spotify Web Player
+  - **Internet Radio**: Coming soon
+- **Simple Navigation**: Home screen for source selection, each app loads independently
+- **System Settings**: Network info, display controls, audio device selection
+- **Clean Design**: Each source uses its native interface and controls
+
+## 📋 Requirements
+
+### System Requirements
+- **OS**: DietPi x86, Debian 11+, or any modern Linux distribution
+- **CPU**: x86_64 processor with good performance
+- **RAM**: 2GB minimum, 4GB recommended
+- **Display**: 1024x600 touchscreen (optimized for this resolution)
+
+### Software Dependencies
+- Node.js 18.x or higher
+- npm 9.x or higher
+
+## 🚀 Installation
+
+### On Windows (for Development/Testing)
+
+1. **Install Node.js**:
+   - Download from [nodejs.org](https://nodejs.org/)
+   - Install version 18.x LTS or higher
+   - Verify installation:
+   ```powershell
+   node --version
+   npm --version
+   ```
+
+2. **Navigate to project folder**:
+   ```powershell
+   cd path\to\hifi-media-player
+   ```
+
+3. **Run installation script**:
+   ```powershell
+   .\install-windows.bat
+   ```
+   
+   Or manually:
+   ```powershell
+   npm install
+   npm run build
+   ```
+
+4. **Start the application**:
+   - Development mode: `.\start-dev.bat` or `npm run electron:dev`
+   - Production mode: `.\start-prod.bat` or `npm run electron`
+
+### On DietPi / Debian (Production Environment)
+
+1. **Install Node.js and npm**:
+```bash
+# Update package list
+sudo apt update
+
+# Install Node.js and npm
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verify installation
+node --version
+npm --version
+```
+
+2. **Install additional dependencies**:
+```bash
+# Install required system libraries for Electron
+sudo apt install -y \
+    libgtk-3-0 \
+    libnotify4 \
+    libnss3 \
+    libxss1 \
+    libxtst6 \
+    xdg-utils \
+    libatspi2.0-0 \
+    libdrm2 \
+    libgbm1 \
+    libxcb-dri3-0
+```
+
+3. **Clone or download this project**:
+```bash
+cd ~
+# If using git:
+git clone <repository-url> hifi-media-player
+# Or extract from archive
+cd hifi-media-player
+```
+
+4. **Run installation script**:
+```bash
+chmod +x install-dietpi.sh
+./install-dietpi.sh
+```
+
+Or manually:
+```bash
+npm install
+npm run build
+```
+
+## 🎮 Running the Application
+
+### On Windows
+
+**Development Mode** (with hot-reload):
+```powershell
+# Using batch script
+.\start-dev.bat
+
+# Or directly
+npm run electron:dev
+```
+
+**Production Mode**:
+```powershell
+# Using batch script
+.\start-prod.bat
+
+# Or manually
+npm run build
+npm run electron
+```
+
+### On Linux/DietPi
+
+**Development Mode** (with hot-reload):
+```bash
+# Start Vite dev server and Electron
+npm run electron:dev
+
+# Or use the script
+./start-fullscreen.sh
+```
+
+**Production Mode**:
+```bash
+# Build first
+npm run build
+
+# Then run
+npm run electron
+```
+
+### Testing on Windows (1024x600 simulation)
+
+To test the touchscreen interface on Windows:
+
+1. **Resize the window** to 1024x600 manually, or
+2. **Use browser DevTools**:
+   - Open DevTools in Electron (automatically opened in dev mode)
+   - Press `Ctrl+Shift+M` for responsive design mode
+   - Set custom resolution: 1024 x 600
+   - Enable touch simulation
+3. **External monitor**: If you have a secondary monitor, set it to 1024x600 in Windows Display Settings
+
+## 📦 Building for Distribution
+
+To create a distributable package:
+
+```bash
+npm run package
+```
+
+The built application will be in the `dist/` directory.
+
+## 🔧 Configuration
+
+### Audio Backend Integration
+The app includes IPC hooks for audio playback. To integrate with a media backend:
+
+1. **Using MPV**:
+```bash
+sudo apt install mpv
+# Integrate via IPC in main/main.js
+```
+
+2. **Using VLC**:
+```bash
+sudo apt install vlc
+# Use VLC's HTTP interface or node-vlc
+```
+
+3. **Using PipeWire**:
+```bash
+sudo apt install pipewire pipewire-pulse
+# Configure audio routing
+```
+
+### Lyrion Server Setup
+1. Install Lyrion Music Server:
+```bash
+# Download from lyrion.org or use package manager
+sudo apt install lyrionmusicserver
+```
+
+2. Configure server URL in app (default: `http://localhost:9000/material/`)
+
+### Display Configuration for 1024x600
+
+The app is optimized for 1024x600 resolution. To set your display:
+
+```bash
+# Check current resolution
+xrandr
+
+# Set resolution (replace HDMI-1 with your display)
+xrandr --output HDMI-1 --mode 1024x600
+
+# Make it permanent in /boot/config.txt or X11 config
+```
+
+### Fullscreen/Kiosk Mode
+
+To run in fullscreen mode, edit `main/main.js` and change:
+
+```javascript
+fullscreen: true,  // Enable fullscreen
+// or
+kiosk: true,      // Enable kiosk mode (harder to exit)
+```
+
+### Auto-start on Boot
+
+Create a systemd service:
+
+```bash
+sudo nano /etc/systemd/system/hifi-player.service
+```
+
+Add the following:
+
+```ini
+[Unit]
+Description=HiFi Media Player
+After=graphical.target
+
+[Service]
+Type=simple
+User=dietpi
+Environment=DISPLAY=:0
+WorkingDirectory=/home/dietpi/hifi-media-player
+ExecStart=/usr/bin/npm run electron
+Restart=always
+
+[Install]
+WantedBy=graphical.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl enable hifi-player
+sudo systemctl start hifi-player
+```
+
+## 📁 Project Structure
+
+```
+hifi-media-player/
+├── main/                   # Electron main process
+│   ├── main.js            # Main window and IPC handlers
+│   └── preload.js         # Context bridge for security
+├── src/                   # React application
+│   ├── components/        # Reusable components
+│   │   └── NavigationBar.jsx
+│   ├── pages/            # Page components (embedded web interfaces)
+│   │   ├── Home.jsx       # Source selection
+│   │   ├── Settings.jsx   # System settings
+│   │   ├── YouTube.jsx    # YouTube embedded
+│   │   ├── Spotify.jsx    # Spotify Web Player embedded
+│   │   └── LyrionServer.jsx # Lyrion Material skin embedded
+│   ├── App.jsx           # Main app component
+│   ├── main.jsx          # React entry point
+│   └── index.css         # Global styles
+├── index.html            # HTML template
+├── package.json          # Dependencies and scripts
+├── vite.config.js        # Vite configuration
+├── tailwind.config.js    # Tailwind CSS configuration
+├── postcss.config.js     # PostCSS configuration
+├── install-windows.bat   # Windows installation script
+├── start-dev.bat         # Windows dev mode script
+├── start-prod.bat        # Windows production script
+├── install-dietpi.sh     # DietPi installation script
+├── start-fullscreen.sh   # Linux fullscreen startup script
+├── README.md             # Full documentation (English)
+└── GUIDA-RAPIDA.md       # Quick guide (Italian)
+```
+
+## 🎨 Customization
+
+### Changing Theme Colors
+Edit `tailwind.config.js`:
+
+```javascript
+colors: {
+  'hifi-dark': '#0a0a0a',    // Main background
+  'hifi-gray': '#1a1a1a',    // Secondary background
+  'hifi-light': '#2a2a2a',   // Elevated elements
+  'hifi-accent': '#3a3a3a',  // Borders
+  'hifi-gold': '#d4af37',    // Primary accent
+  'hifi-silver': '#c0c0c0',  // Secondary text
+}
+```
+
+### Adding New Sources (Web Apps)
+1. Create a new page component in `src/pages/` (use YouTube.jsx as template)
+2. Add the webview with your URL
+3. Add route in `src/App.jsx`
+4. Add source button in `src/pages/Home.jsx` with icon and color
+
+Example for a new source:
+```jsx
+// src/pages/Tidal.jsx
+<iframe
+  src="https://listen.tidal.com"
+  className="w-full h-full border-0"
+  onLoad={() => setIsLoaded(true)}
+  allow="autoplay; encrypted-media; fullscreen"
+  allowFullScreen
+  title="Tidal"
+/>
+```
+
+## 🔌 IPC API Reference
+
+The app exposes these IPC methods for backend integration:
+
+### System Info
+```javascript
+window.electronAPI.getSystemInfo()
+// Returns: { hostname, platform, arch, version, electronVersion }
+
+window.electronAPI.getNetworkInfo()
+// Returns: [{ name, address, netmask }, ...]
+```
+
+### Playback Control
+```javascript
+window.electronAPI.playbackControl(action, data)
+// Actions: 'play', 'pause', 'next', 'previous', 'seek'
+
+window.electronAPI.setVolume(volume)
+// volume: 0-100
+
+window.electronAPI.setAudioDevice(deviceId)
+// deviceId: string
+```
+
+## 💡 Future Enhancements
+
+### Recommended Additions
+
+1. **Additional Streaming Services**:
+   - Tidal
+   - Deezer
+   - Apple Music Web
+   - SoundCloud
+   - Bandcamp
+
+2. **Internet Radio Integration**:
+   - Embed Radio Browser or TuneIn
+   - Create custom radio station list
+   - Add favorites and presets
+
+3. **Bluetooth/USB DAC Support**:
+   - Enumerate audio devices via ALSA/PulseAudio/PipeWire
+   - Add real-time device switching in Settings
+   - Support high-resolution audio output
+
+4. **Advanced Lyrion Integration**:
+   - Direct API communication instead of just embedding
+   - Custom UI for Lyrion if desired
+   - Sync playback state
+
+5. **Kiosk Mode Enhancements**:
+   - Auto-hide cursor after inactivity
+   - Screen saver with album art or visualizations
+   - Power management (display off timer)
+
+6. **Network Features**:
+   - AirPlay receiver support
+   - DLNA/UPnP renderer
+   - Chromecast support
+
+### Example: Adding Internet Radio
+
+Create `src/pages/InternetRadio.jsx`:
+```jsx
+const InternetRadio = () => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  return (
+    <div className="min-h-full flex flex-col">
+      {/* Header */}
+      <div className="bg-gradient-to-b from-hifi-gray to-hifi-dark border-b border-hifi-accent px-8 py-4">
+        <h1 className="text-2xl font-bold text-white">Internet Radio</h1>
+      </div>
+      
+      {/* Embed Radio Browser or custom interface */}
+      <iframe
+        src="https://www.radio-browser.info"
+        className="flex-1 border-0"
+        onLoad={() => setIsLoaded(true)}
+        allow="autoplay"
+        title="Internet Radio"
+      />
+    </div>
+  );
+};
+```
+
+## 🐛 Troubleshooting
+
+### App doesn't start
+- Check Node.js version: `node --version` (should be 18+)
+- Reinstall dependencies: `rm -rf node_modules && npm install`
+- Check Electron dependencies: `sudo apt install libgtk-3-0 libnss3`
+
+### Iframe not loading
+- Some sites block iframe embedding (X-Frame-Options)
+- Check network connectivity
+- Try "Open in Browser" button for sites that don't allow embedding
+- For local development, CORS might cause issues - use production mode
+
+### Touch screen not responding
+- Calibrate touch screen in DietPi settings
+- Check if X11 touch drivers are installed
+- Verify display configuration
+
+### Audio not working
+- Check ALSA/PulseAudio/PipeWire status
+- Test with: `speaker-test -t wav -c 2`
+- Verify audio device in Settings
+
+## 📄 License
+
+MIT License - feel free to use and modify for your projects.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit pull requests or open issues.
+
+## 📧 Support
+
+For issues and questions, please open a GitHub issue or consult the documentation.
+
+---
+
+**Built with ❤️ for audiophiles and music lovers**
+

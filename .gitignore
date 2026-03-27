@@ -1,0 +1,8 @@
+node_modules/
+dist/
+renderer-dist/
+*.log
+.DS_Store
+.vscode/
+.idea/
+
